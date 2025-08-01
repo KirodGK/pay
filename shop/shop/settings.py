@@ -36,7 +36,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'pay',
+    'pay.apps.PayConfig',
 ]
 
 MIDDLEWARE = [
@@ -69,14 +69,15 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'shop.wsgi.application'
 
-STRIPE_PUBLIC_KEY_USD = os.getenv('STRIPE_PUBLIC_KEY_USD', 'pk_test_usd_key_here')
-STRIPE_SECRET_KEY_USD = os.getenv('STRIPE_SECRET_KEY_USD', 'sk_test_usd_key_here')
-STRIPE_PUBLIC_KEY_EUR = os.getenv('STRIPE_PUBLIC_KEY_EUR', 'pk_test_eur_key_here')
-STRIPE_SECRET_KEY_EUR = os.getenv('STRIPE_SECRET_KEY_EUR', 'sk_test_eur_key_here')
+# Stripe settings
+STRIPE_PUBLIC_KEY_USD = config('STRIPE_PUBLIC_KEY_USD')
+STRIPE_SECRET_KEY_USD = config('STRIPE_SECRET_KEY_USD')
+STRIPE_PUBLIC_KEY_EUR = config('STRIPE_PUBLIC_KEY_EUR')
+STRIPE_SECRET_KEY_EUR = config('STRIPE_SECRET_KEY_EUR')
 
-# Основные ключи (по умолчанию USD)
+# Default keys (USD)
 STRIPE_PUBLIC_KEY = STRIPE_PUBLIC_KEY_USD
-STRIPE_SECRET_KEY = STRIPE_SECRET_KEY_USD')
+STRIPE_SECRET_KEY = STRIPE_SECRET_KEY_USD
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases

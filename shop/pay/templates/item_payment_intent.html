@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Buy {{ item.name }} (Payment Intent)</title>
+    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        #payment-form {
+            width: 30vw;
+            min-width: 500px;
+            padding: 20px;
+        }
+        .form-row {
+            margin: 10px 0;
+        }
+        #card-element {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        #payment-message {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <h1>{{ item.name }}</h1>
+    <p>{{ item.description }}</p>
+    <p>Price: {{ item.price }} {{ item.currency.upper }}</p>
+    
+    <form id="payment-form">
+        <div class="form-row">
+            <label for="card-element">
+                Credit or debit card
+            </label>
+            <div id="card-element">
+                <!-- Stripe Elements will create form elements here -->
+            </div>
+        </div>
+        <button id="submit-button">Pay Now</button>
+        <div id="payment-message"></div>
+    </form>
+
+    <script>
+        // Публичный ключ Stripe
+        var stripe = Stripe('{{ STRIPE_PUBLIC_KEY }}');
+        
+        // Создаем Elements instance
+        var elements = stripe.elements();
+        
+        // Создаем Card Element
+        var cardElement = elements.create('card');
+        cardElement.mount('#card-element');
+        
+        // Обработчик формы
+        var form = document.getElementById('payment-form');
+        var submitButton = document.getElementById('submit-button');
+        var paymentMessage = document.getElementById('payment-message');
+
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            // Блокируем кнопку во время обработки
+            submitButton.disabled = true;
+            showMessage('Processing payment...', 'info');
+
+            // Получаем client_secret для Payment Intent
+            fetch('/payment-intent/{{ item.id }}/')
+                .then(function(response) {
+                    return response.json();
+                })
+                .then(function(data) {
+                    if (data.error) {
+                        showMessage(data.error, 'error');
+                        submitButton.disabled = false;
+                        return;
+                    }
+                    
+                    // Подтверждаем Payment Intent
+                    return stripe.confirmCardPayment(data.client_secret, {
+                        payment_method: {
+                            card: cardElement,
+                            billing_details: {
+                                name: 'Test Customer'
+                            }
+                        }
+                    });
+                })
+                .then(function(result) {
+                    if (result) {
+                        if (result.error) {
+                            showMessage(result.error.message, 'error');
+                        } else {
+                            if (result.paymentIntent.status === 'succeeded') {
+                                showMessage('Payment succeeded!', 'success');
+                                // Можно перенаправить на страницу успеха
+                                // window.location.href = '/success/';
+                            }
+                        }
+                    }
+                    submitButton.disabled = false;
+                })
+                .catch(function(error) {
+                    console.error('Error:', error);
+                    showMessage('Error: ' + error.message, 'error');
+                    submitButton.disabled = false;
+                });
+        });
+
+        function showMessage(message, type) {
+            paymentMessage.textContent = message;
+            paymentMessage.className = type;
+            paymentMessage.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

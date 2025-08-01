@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Order #{{ order.id }}</title>
+    <script src="https://js.stripe.com/v3/"></script>
+</head>
+<body>
+    <h1>Order #{{ order.id }}</h1>
+    <h2>Items:</h2>
+    <ul>
+        {% for item in order.items.all %}
+            <li>{{ item.name }} - {{ item.price }} {{ item.currency.upper }}</li>
+        {% endfor %}
+    </ul>
+    
+    {% if order.discount %}
+        <p>Discount: {{ order.discount.name }} ({{ order.discount.percent_off }}%)</p>
+    {% endif %}
+    
+    {% if order.tax %}
+        <p>Tax: {{ order.tax.name }} ({{ order.tax.percentage }}%)</p>
+    {% endif %}
+    
+    <h3>Total: {{ order.total_price }} {{ currency.upper }}</h3>
+    <button id="buy-button">Pay Now</button>
+
+    <script>
+        var stripe = Stripe('{{ STRIPE_PUBLIC_KEY }}');
+        var buyButton = document.getElementById('buy-button');
+    
+        buyButton.addEventListener('click', function () {
+            fetch('/order/{{ order.id }}/buy/')
+                .then(function (response) {
+                    return response.json();
+                })
+                .then(function (session) {
+                    return stripe.redirectToCheckout({ sessionId: session.id });
+                })
+                .catch(function (error) {
+                    console.error('Error:', error);
+                    alert('Error: ' + error.message);
+                });
+        });
+    </script>
+</body>
+</html>
